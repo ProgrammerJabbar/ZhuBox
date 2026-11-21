@@ -486,6 +486,7 @@ textarea.input { line-height: 1.4; }
 .song-today { border: 1px solid var(--green); }
 .song-card-head, .song-form-title, .song-history-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .song-card-head h2, .song-form-title h2, .song-history-title h2 { font-size: 21px; overflow-wrap: anywhere; }
+.song-byline { margin-top: 2px; }
 .song-note { align-self: flex-start; max-width: 100%; padding: 8px 13px; border-radius: 16px 16px 16px 4px; background: var(--green-s); white-space: pre-wrap; overflow-wrap: anywhere; }
 .song-player { display: block; width: 100%; height: 152px; border: 0; border-radius: 14px; background: var(--surface-2); }
 .song-open { align-self: flex-start; text-decoration: none; }
@@ -496,6 +497,8 @@ textarea.input { line-height: 1.4; }
 .song-empty { align-items: center; text-align: center; padding: 28px 20px; }
 .song-empty h2 { font-size: 21px; }
 .song-empty p { max-width: 32ch; color: var(--ink-2); }
+.song-today-list { display: flex; flex-direction: column; gap: 12px; }
+.song-own-add { align-self: flex-start; }
 .song-history { display: flex; flex-direction: column; gap: 12px; }
 .song-history-title { justify-content: flex-start; }
 .song-history-empty { padding: 4px 2px 12px; color: var(--ink-2); }

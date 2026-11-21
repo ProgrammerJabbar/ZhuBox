@@ -1,8 +1,8 @@
 # Our Days
 
 A private shared space for two people: a polaroid wall of daily updates, a song-of-the-day playlist
-with dated history, a museum-style photo gallery, old-fashioned letters, live chat, a flower garden,
-critter friends and surprise gifts.
+where each person can add one song per date, a museum-style photo gallery, old-fashioned letters,
+live chat, a flower garden, critter friends and surprise gifts.
 
 Built with React 18 and bundled with esbuild into one self-contained `index.html`.
 

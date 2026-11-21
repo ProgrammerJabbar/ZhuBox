@@ -37,7 +37,7 @@ function SongPlayer({ song }) {
 }
 
 function SongForm({ editSong, onClose }) {
-  const { data, add, patch, toast } = useApp();
+  const { data, uid, add, patch, toast } = useApp();
   const [date, setDate] = useState(editSong ? editSong.date : dayKey());
   const [title, setTitle] = useState(editSong ? editSong.title : '');
   const [artist, setArtist] = useState(editSong ? editSong.artist : '');
@@ -45,17 +45,17 @@ function SongForm({ editSong, onClose }) {
   const [note, setNote] = useState(editSong ? editSong.note || '' : '');
   const [busy, setBusy] = useState(false);
   const songs = data.songs || [];
-  const duplicate = songs.find((song) => song.date === date && song.id !== (editSong && editSong.id));
+  const duplicate = songs.find((song) => song.date === date && song.by === uid && song.id !== (editSong && editSong.id));
 
   async function save(e) {
     e.preventDefault();
     if (busy || !title.trim() || !artist.trim() || !date || !playerFor(url.trim())) return;
-    if (duplicate) { toast('There is already a song for that day. Edit it from the list below.'); return; }
+    if (duplicate) { toast('You already added a song for that day. Edit yours or choose a different date.'); return; }
     setBusy(true);
     const value = { date, title: title.trim().slice(0, 80), artist: artist.trim().slice(0, 80), url: url.trim(), note: note.trim().slice(0, 120) };
     const saved = editSong ? await patch('songs/' + editSong.id, value) : await add('songs', value);
     if (saved) {
-      toast(editSong ? 'Song updated' : 'Song of the day added');
+      toast(editSong ? 'Song updated' : 'Your song was added');
       onClose();
       return;
     }
@@ -75,17 +75,17 @@ function SongForm({ editSong, onClose }) {
       <textarea id="song-note" className="input" rows={2} value={note} onChange={(e) => setNote(e.target.value)} maxLength={120} placeholder="A short thought to go with this song…" />
       <label className="lbl" htmlFor="song-date">Date</label>
       <input id="song-date" className="input" type="date" value={date} max={dayKey()} onChange={(e) => setDate(e.target.value)} required />
-      {duplicate && <p className="song-error" role="status">There is already a song saved for this date. Edit that entry instead.</p>}
+      {duplicate && <p className="song-error" role="status">You already added a song for this date. Edit yours or choose a different date.</p>}
       <button className="btn big" disabled={busy || !title.trim() || !artist.trim() || !playerFor(url.trim()) || !!duplicate}>{busy ? 'Saving…' : editSong ? 'Save changes' : 'Save song'}</button>
     </form>
   );
 }
 
-function SongCard({ song, today, onEdit }) {
+function SongCard({ song, today, nameOf, onEdit }) {
   return (
     <article className={'song-card card' + (today ? ' song-today' : '')}>
       <div className="song-card-head">
-        <div><p className="eyebrow">{today ? 'Today' : dateStr(parseDay(song.date))}</p><h2>{song.title}</h2><p className="soft">{song.artist}</p></div>
+        <div><p className="eyebrow">{today ? 'Today' : dateStr(parseDay(song.date))}</p><h2>{song.title}</h2><p className="soft">{song.artist}</p>{song.by && <p className="song-byline soft small">Picked by {nameOf(song.by)}</p>}</div>
         <button className="icon-btn" onClick={() => onEdit(song)} aria-label={`Edit ${song.title}`}><Icon n="edit" size={20} /></button>
       </div>
       {song.note && <p className="song-note">{song.note}</p>}
@@ -95,12 +95,13 @@ function SongCard({ song, today, onEdit }) {
 }
 
 export default function SongOfDay() {
-  const { data } = useApp();
+  const { data, uid, nameOf } = useApp();
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const songs = useMemo(() => [...(data.songs || [])].sort((a, b) => b.date.localeCompare(a.date) || b.ts - a.ts), [data.songs]);
-  const todaySong = songs.find((song) => song.date === dayKey());
-  const history = songs.filter((song) => song.id !== (todaySong && todaySong.id));
+  const todaySongs = songs.filter((song) => song.date === dayKey());
+  const myTodaySong = todaySongs.find((song) => song.by === uid);
+  const history = songs.filter((song) => song.date !== dayKey());
 
   const edit = (song) => { setEditing(song); setFormOpen(true); };
   const closeForm = () => { setEditing(null); setFormOpen(false); };
@@ -109,18 +110,21 @@ export default function SongOfDay() {
     <div className="songs">
       <header className="head pad">
         <span className="song-heading-icon"><Icon n="music" size={25} /></span>
-        <div className="head-t"><h1>Song of the day</h1><p>A little soundtrack for us</p></div>
+        <div className="head-t"><h1>Song of the day</h1><p>One pick each, every day</p></div>
         {!formOpen && <button className="btn song-add" onClick={() => { setEditing(null); setFormOpen(true); }}><Icon n="plus" size={18} /> Add</button>}
       </header>
       <div className="songs-content pad">
         {formOpen && <SongForm key={editing ? editing.id : 'new'} editSong={editing} onClose={closeForm} />}
-        {todaySong
-          ? <SongCard song={todaySong} today onEdit={edit} />
-          : <div className="song-empty card"><span className="song-empty-icon"><Icon n="music" size={34} /></span><h2>No song picked for today</h2><p>Share a song and the little thought that comes with it.</p>{!formOpen && <button className="btn" onClick={() => setFormOpen(true)}>Choose today’s song</button>}</div>}
+        {todaySongs.length
+          ? <section className="song-today-list" aria-label="Today's songs">
+              {todaySongs.map((song) => <SongCard key={song.id} song={song} today nameOf={nameOf} onEdit={edit} />)}
+              {!myTodaySong && !formOpen && <button className="btn song-own-add" onClick={() => setFormOpen(true)}>Add your song</button>}
+            </section>
+          : <div className="song-empty card"><span className="song-empty-icon"><Icon n="music" size={34} /></span><h2>No songs picked for today</h2><p>Each of you can add one song and a little thought for the date.</p>{!formOpen && <button className="btn" onClick={() => setFormOpen(true)}>Add your song</button>}</div>}
         <section className="song-history">
           <div className="song-history-title"><h2>History</h2><span className="soft small">{history.length} {history.length === 1 ? 'song' : 'songs'}</span></div>
           {history.length
-            ? history.map((song) => <SongCard key={song.id} song={song} onEdit={edit} />)
+            ? history.map((song) => <SongCard key={song.id} song={song} nameOf={nameOf} onEdit={edit} />)
             : <p className="song-history-empty">Your past picks will live here, with their dates.</p>}
         </section>
       </div>
